@@ -446,7 +446,7 @@ CPPSRCS += \
 	$(NULL)
 endif
 
-ifeq (android,$(MOZ_WIDGET_TOOLKIT))
+ifeq (Android,$(OS_TARGET))
 CPPSRCS += \
 	SkDebug_android.cpp \
 	SkFontHost_cairo.cpp \
