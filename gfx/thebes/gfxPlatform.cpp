@@ -70,6 +70,7 @@
 #include "mozilla/Attributes.h"
 
 #include "nsIGfxInfo.h"
+#include "cutils/properties.h"
 
 using namespace mozilla;
 using namespace mozilla::layers;
@@ -705,7 +706,8 @@ DataDrawTargetDestroy(void *aTarget)
 bool
 gfxPlatform::UseAcceleratedCanvas()
 {
-  return Preferences::GetBool("gfx.canvas.azure.accelerated", false) &&
+  //return Preferences::GetBool("gfx.canvas.azure.accelerated", false) &&
+  return 1 &&
          mPreferredCanvasBackend == BACKEND_SKIA;
 }
 
@@ -1234,6 +1236,11 @@ gfxPlatform::InitBackendPrefs(EnumSet<BackendType> aCanvasSupportedBackends,
     if (mPreferredCanvasBackend == BACKEND_NONE) {
         mPreferredCanvasBackend = BACKEND_CAIRO;
     }
+    char propValue[PROPERTY_VALUE_MAX] = {};
+    property_get("debug.gfx.skia", propValue, "1");
+    if (atoi(propValue) <= 0)
+      mPreferredCanvasBackend = BACKEND_CAIRO;
+    __android_log_print(ANDROID_LOG_INFO, "gfx", "gfxPlatform:InitBackendPrefs mPreferredCanvasBackend %d\n", mPreferredCanvasBackend);
 
     mFallbackCanvasBackend = GetBackendPref(mAzureCanvasBackendPref.Get(),
                                             aCanvasSupportedBackends -

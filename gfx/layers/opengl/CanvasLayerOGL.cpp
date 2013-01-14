@@ -115,17 +115,19 @@ CanvasLayerOGL::Initialize(const Data& aData)
   }
 
   mOGLManager->MakeCurrent();
-
+  __android_log_print(ANDROID_LOG_INFO, "canvasOGL", "CanvasLayerOGL(%d) mDrawTarget %d mSurface %d\n", __LINE__, aData.mDrawTarget?1:0, aData.mSurface?1:0);
   if (aData.mDrawTarget &&
       aData.mDrawTarget->GetNativeSurface(gfx::NATIVE_SURFACE_CGCONTEXT_ACCELERATED)) {
     mDrawTarget = aData.mDrawTarget;
     mNeedsYFlip = false;
     mBounds.SetRect(0, 0, aData.mSize.width, aData.mSize.height);
+    __android_log_print(ANDROID_LOG_INFO, "canvasOGL", "CanvasLayerOGL(%d) mDrawTarget %d mSurface %d\n", __LINE__, aData.mDrawTarget?1:0, aData.mSurface?1:0);
     return;
   } else if (aData.mDrawTarget) {
     mDrawTarget = aData.mDrawTarget;
     mCanvasSurface = gfxPlatform::GetPlatform()->GetThebesSurfaceForDrawTarget(mDrawTarget);
     mNeedsYFlip = false;
+    __android_log_print(ANDROID_LOG_INFO, "canvasOGL", "CanvasLayerOGL(%d) mDrawTarget %d mSurface %d\n", __LINE__, aData.mDrawTarget?1:0, aData.mSurface?1:0);
   } else if (aData.mSurface) {
     mCanvasSurface = aData.mSurface;
     mNeedsYFlip = false;
@@ -144,11 +146,13 @@ CanvasLayerOGL::Initialize(const Data& aData)
     }
 #endif
   } else if (aData.mGLContext) {
+	  __android_log_print(ANDROID_LOG_INFO, "canvasOGL", "CanvasLayerOGL(%d) mDrawTarget %d mSurface %d\n", __LINE__, aData.mDrawTarget?1:0, aData.mSurface?1:0);
     if (!aData.mGLContext->IsOffscreen() && aData.mTextureID == 0) {
       NS_WARNING("CanvasLayerOGL with a non-offscreen GL context given");
       return;
     }
 
+    __android_log_print(ANDROID_LOG_INFO, "canvasOGL", "CanvasLayerOGL(%d) mDrawTarget %d mSurface %d\n", __LINE__, aData.mDrawTarget?1:0, aData.mSurface?1:0);
     mCanvasGLContext = aData.mGLContext;
     mTexture = aData.mTextureID;
     mGLBufferIsPremultiplied = aData.mGLBufferIsPremultiplied;
@@ -189,6 +193,9 @@ CanvasLayerOGL::Initialize(const Data& aData)
 void
 CanvasLayerOGL::UpdateSurface()
 {
+	__android_log_print(ANDROID_LOG_INFO, "CanvasOGL", "CanvasLayerOGL::UpdateSurface(%d) mCanvasGLContext %d mForceReadback %d contexttype %d mTexture\n",
+			  __LINE__, mCanvasGLContext?1:0, mForceReadback?1:0, mCanvasGLContext->GetContextType(), mTexture?1:0);
+
   if (!IsDirty())
     return;
   Painted();

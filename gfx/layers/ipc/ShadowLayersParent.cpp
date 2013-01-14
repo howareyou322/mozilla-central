@@ -410,7 +410,7 @@ ShadowLayersParent::RecvUpdate(const InfallibleTArray<Edit>& cset,
       break;
     }
     case Edit::TOpPaintCanvas: {
-      MOZ_LAYERS_LOG(("[ParentSide] Paint CanvasLayer"));
+      __android_log_print(ANDROID_LOG_INFO, "ipc", "[ParentSide] Paint CanvasLayer");
 
       const OpPaintCanvas& op = edit.get_OpPaintCanvas();
       ShadowLayerParent* shadow = AsShadowLayer(op);

@@ -829,6 +829,7 @@ CanvasRenderingContext2D::EnsureTarget()
                                      LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_BYTE, nullptr);
          GetGrContext()->resetContext();
          mTarget = Factory::CreateDrawTargetForOpenGLTexture(GetGrContext(), mTextureID, size);
+         __android_log_print(ANDROID_LOG_INFO, "canvas", "CanvasRenderingContext2D::EnsureTarget mTextureID %d mTarget %d\n", mTextureID, mTarget?1:0);
        } else
 #endif
          mTarget = layerManager->CreateDrawTarget(size, format);
@@ -3829,7 +3830,9 @@ CanvasRenderingContext2D::GetCanvasLayer(nsDisplayListBuilder* aBuilder,
   canvasLayer->SetUserData(&g2DContextLayerUserData, userData);
 
   CanvasLayer::Data data;
-
+  __android_log_print(ANDROID_LOG_INFO, "canvas", "CanvasRenderingContext2D::GetCanvasLayer mTextureID %d mGLContext %d mDrawTarget %d canvasLayer %p\n", mTextureID, data.mGLContext?1:0,
+		  mTarget?1:0, canvasLayer.get());
+  sleep(8);
   if (mTextureID) {
     data.mGLContext = GetGLContext().get();
     data.mTextureID = mTextureID;

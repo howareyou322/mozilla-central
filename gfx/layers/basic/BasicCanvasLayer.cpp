@@ -101,16 +101,19 @@ BasicCanvasLayer::Initialize(const Data& aData)
     NS_ASSERTION(aData.mGLContext == nullptr,
                  "CanvasLayer can't have both surface and GLContext");
     mNeedsYFlip = false;
+    __android_log_print(ANDROID_LOG_INFO, "gfx", "BasicCanvasLayer::Initialize(%d)\n", __LINE__);
   } else if (aData.mGLContext) {
     NS_ASSERTION(aData.mGLContext->IsOffscreen(), "canvas gl context isn't offscreen");
     mGLContext = aData.mGLContext;
     mGLBufferIsPremultiplied = aData.mGLBufferIsPremultiplied;
     mCanvasFramebuffer = mGLContext->GetOffscreenFBO();
     mNeedsYFlip = true;
+    __android_log_print(ANDROID_LOG_INFO, "gfx", "BasicCanvasLayer::Initialize(%d)\n", __LINE__);
   } else if (aData.mDrawTarget) {
     mDrawTarget = aData.mDrawTarget;
     mSurface = gfxPlatform::GetPlatform()->CreateThebesSurfaceAliasForDrawTarget_hack(mDrawTarget);
     mNeedsYFlip = false;
+    __android_log_print(ANDROID_LOG_INFO, "gfx", "BasicCanvasLayer::Initialize(%d)\n", __LINE__);
   } else {
     NS_ERROR("CanvasLayer created without mSurface, mDrawTarget or mGLContext?");
   }
@@ -121,19 +124,22 @@ BasicCanvasLayer::Initialize(const Data& aData)
 void
 BasicCanvasLayer::UpdateSurface(gfxASurface* aDestSurface, Layer* aMaskLayer)
 {
+  //__android_log_print(ANDROID_LOG_INFO, "gfx", "BCanvasLayer:UpdateSurface(%d) IN\n", __LINE__);
   if (!IsDirty())
     return;
   Painted();
 
   if (mDrawTarget) {
     mDrawTarget->Flush();
-    if (mDrawTarget->GetType() == BACKEND_COREGRAPHICS_ACCELERATED) {
+    if (mDrawTarget->GetType() == BACKEND_COREGRAPHICS_ACCELERATED ||
+      mDrawTarget->GetType() == BACKEND_SKIA) {
       // We have an accelerated CG context which has changed, unlike a bitmap surface
       // where we can alias the bits on initializing the mDrawTarget, we need to readback
       // and copy the accelerated surface each frame. We want to support this for quick
       // thumbnail but if we're going to be doing this every frame it likely is better
       // to use a non accelerated (bitmap) canvas.
       mSurface = gfxPlatform::GetPlatform()->GetThebesSurfaceForDrawTarget(mDrawTarget);
+      //__android_log_print(ANDROID_LOG_INFO, "gfx", "BCanvasLayer:UpdateSurface(%d) OUT mGLContext %d \n", __LINE__, mGLContext?1:0);
     }
   }
 
@@ -141,6 +147,7 @@ BasicCanvasLayer::UpdateSurface(gfxASurface* aDestSurface, Layer* aMaskLayer)
     nsRefPtr<gfxContext> tmpCtx = new gfxContext(aDestSurface);
     tmpCtx->SetOperator(gfxContext::OPERATOR_SOURCE);
     BasicCanvasLayer::PaintWithOpacity(tmpCtx, 1.0f, aMaskLayer);
+      //__android_log_print(ANDROID_LOG_INFO, "gfx", "BCanvasLayer:UpdateSurface(%d) OUT mGLContext %d \n", __LINE__, mGLContext?1:0);
     return;
   }
 
