@@ -68,6 +68,7 @@ typedef void *EGLNativeWindowType;
 #define EGL_NO_DISPLAY       ((EGLDisplay)0)
 #define EGL_NO_SURFACE       ((EGLSurface)0)
 #define EGL_NO_SYNC          ((EGLSync)0)
+#define EGL_NO_IMAGE         ((EGLImage)0)
 
 #define EGL_DISPLAY()        sEGLLibrary.Display()
 

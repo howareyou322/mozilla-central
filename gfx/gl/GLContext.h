@@ -175,6 +175,7 @@ public:
         mOwningThread = NS_GetCurrentThread();
 
         mTexBlit_UseDrawNotCopy = Preferences::GetBool("gl.blit-draw-not-copy", false);
+        mTexBlit_UseDrawNotCopy = true;
     }
 
     virtual ~GLContext() {
@@ -548,6 +549,9 @@ public:
         return IsExtensionSupported(EXT_framebuffer_blit) || IsExtensionSupported(ANGLE_framebuffer_blit);
     }
 
+    virtual bool CopyToGrallocBuffer(android::GraphicBuffer* buffer, const gfxIntSize& size,GLuint tex = 0) {
+        return false;
+    }
 
     enum SharedTextureShareType {
         SameProcess = 0,

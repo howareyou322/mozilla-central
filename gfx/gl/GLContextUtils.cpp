@@ -17,7 +17,7 @@ namespace gl {
 static const char kTexBlit_VertShaderSource[] = "\
 attribute vec2 aPosition;                   \n\
                                             \n\
-varying vec2 vTexCoord;                     \n\
+varying mediump vec2 vTexCoord;                     \n\
                                             \n\
 void main(void) {                           \n\
     vTexCoord = aPosition;                  \n\
@@ -29,7 +29,7 @@ void main(void) {                           \n\
 static const char kTexBlit_FragShaderSource[] = "\
 uniform sampler2D uTexUnit;                         \n\
                                                     \n\
-varying vec2 vTexCoord;                             \n\
+varying mediump vec2 vTexCoord;                             \n\
                                                     \n\
 void main(void) {                                   \n\
     gl_FragColor = texture2D(uTexUnit, vTexCoord);  \n\
@@ -367,6 +367,15 @@ GLContext::BlitFramebufferToTexture(GLuint srcFB, GLuint destTex,
     MOZ_ASSERT(!srcFB || fIsFramebuffer(srcFB));
     MOZ_ASSERT(fIsTexture(destTex));
 
+    if (srcFB == 0 &&
+        mOffscreenTexture &&
+        mTexBlit_UseDrawNotCopy)
+    {
+        BlitDirtyFBOs();
+        BlitTextureToTexture(mOffscreenTexture, destTex, srcSize, destSize);
+        return;
+    }
+
     if (IsExtensionSupported(EXT_framebuffer_blit) ||
         IsExtensionSupported(ANGLE_framebuffer_blit))
     {
@@ -380,6 +389,7 @@ GLContext::BlitFramebufferToTexture(GLuint srcFB, GLuint destTex,
 
     GLuint boundTex = 0;
     GetUIntegerv(LOCAL_GL_TEXTURE_BINDING_2D, &boundTex);
+    __android_log_print(ANDROID_LOG_INFO, "gfx", "GLContext(%d) BlitFramebufferToTexture boundTex %d dsttex %d\n", __LINE__, boundTex, destTex);
     fBindTexture(LOCAL_GL_TEXTURE_2D, destTex);
 
     ScopedFramebufferBinding boundFB(this, srcFB);

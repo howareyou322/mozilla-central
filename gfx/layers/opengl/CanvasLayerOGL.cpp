@@ -379,6 +379,12 @@ IsValidSharedTexDescriptor(const SurfaceDescriptor& aDescriptor)
   return aDescriptor.type() == SurfaceDescriptor::TSharedTextureDescriptor;
 }
 
+static bool
+IsGrallocDescriptor(const SurfaceDescriptor& desc)
+{
+  return desc.type() == SurfaceDescriptor::TSurfaceDescriptorGralloc;
+}
+
 ShadowCanvasLayerOGL::ShadowCanvasLayerOGL(LayerManagerOGL* aManager)
   : ShadowCanvasLayer(aManager, nullptr)
   , LayerOGL(aManager)
@@ -508,6 +514,8 @@ ShadowCanvasLayerOGL::GetRenderState()
                           mNeedsYFlip ? LAYER_RENDER_STATE_Y_FLIPPED : 0);
 }
 
+typedef android::GraphicBuffer GraphicBuffer;
+
 void
 ShadowCanvasLayerOGL::RenderLayer(int aPreviousFrameBuffer,
                                   const nsIntPoint& aOffset)
@@ -535,7 +543,9 @@ ShadowCanvasLayerOGL::RenderLayer(int aPreviousFrameBuffer,
 #endif
 
   ShaderProgramOGL *program;
-  if (IsValidSharedTexDescriptor(mFrontBufferDescriptor)) {
+  if (IsValidSharedTexDescriptor(mFrontBufferDescriptor) ||
+      IsGrallocDescriptor(mFrontBufferDescriptor))
+  {
     program = mOGLManager->GetBasicLayerProgram(CanUseOpaqueSurface(),
                                                 true,
                                                 GetMaskLayer() ? Mask2d : MaskNone);
@@ -587,8 +597,7 @@ ShadowCanvasLayerOGL::RenderLayer(int aPreviousFrameBuffer,
         mOGLManager->BindAndDrawQuadWithTextureRect(program,
                                                     nsIntRect(0, 0, mTexImage->GetTileRect().width,
                                                                     mTexImage->GetTileRect().height),
-                                                    mTexImage->GetTileRect().Size(),
-                                                    mTexImage->GetWrapMode(),
+                                                    mTexImage->GetTileRect().Size(),     mTexImage->GetWrapMode(),
                                                     mNeedsYFlip);
       } while (mTexImage->NextTile());
     }

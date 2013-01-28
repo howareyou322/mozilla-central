@@ -97,6 +97,11 @@ BasicThebesLayer::PaintThebes(gfxContext* aContext,
   SAMPLE_LABEL("BasicThebesLayer", "PaintThebes");
   NS_ASSERTION(BasicManager()->InDrawing(),
                "Can only draw in drawing phase");
+  static int debug = 0;
+
+  if(debug)
+    return;
+
   nsRefPtr<gfxASurface> targetSurface = aContext->CurrentSurface();
 
   nsTArray<ReadbackProcessor::Update> readbackUpdates;

@@ -199,6 +199,7 @@ GLLibraryEGL::EnsureInitialized()
 
     GLLibraryLoader::PlatformLookupFunction lookupFunction =
             (GLLibraryLoader::PlatformLookupFunction)mSymbols.fGetProcAddress;
+    LoadConfigSensitiveSymbols();
 
     if (IsExtensionSupported(KHR_lock_surface)) {
         GLLibraryLoader::SymLoadStruct lockSymbols[] = {

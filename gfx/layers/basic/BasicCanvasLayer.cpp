@@ -58,7 +58,7 @@ protected:
   nsRefPtr<gfxASurface> mSurface;
   nsRefPtr<mozilla::gl::GLContext> mGLContext;
   mozilla::RefPtr<mozilla::gfx::DrawTarget> mDrawTarget;
-  
+  GLuint mTexture;
   uint32_t mCanvasFramebuffer;
 
   bool mGLBufferIsPremultiplied;
@@ -108,7 +108,8 @@ BasicCanvasLayer::Initialize(const Data& aData)
     mGLBufferIsPremultiplied = aData.mGLBufferIsPremultiplied;
     mCanvasFramebuffer = mGLContext->GetOffscreenFBO();
     mNeedsYFlip = true;
-    __android_log_print(ANDROID_LOG_INFO, "gfx", "BasicCanvasLayer::Initialize(%d)\n", __LINE__);
+    mTexture = aData.mTextureID;
+    __android_log_print(ANDROID_LOG_INFO, "gfx", "BasicCanvasLayer::Initialize(%d) mTextureID %d\n", __LINE__, mTexture);
   } else if (aData.mDrawTarget) {
     mDrawTarget = aData.mDrawTarget;
     mSurface = gfxPlatform::GetPlatform()->CreateThebesSurfaceAliasForDrawTarget_hack(mDrawTarget);
@@ -381,6 +382,14 @@ BasicShadowableCanvasLayer::Initialize(const Data& aData)
   }
 }
 
+static bool
+IsGrallocDescriptor(const SurfaceDescriptor& desc)
+{
+  return desc.type() == SurfaceDescriptor::TSurfaceDescriptorGralloc;
+}
+
+typedef android::GraphicBuffer GraphicBuffer;
+
 void
 BasicShadowableCanvasLayer::Paint(gfxContext* aContext, Layer* aMaskLayer)
 {
@@ -440,13 +449,38 @@ BasicShadowableCanvasLayer::Paint(gfxContext* aContext, Layer* aMaskLayer)
     }
   }
 
-  AutoOpenSurface autoBackSurface(OPEN_READ_WRITE, mBackBuffer);
+  bool updateComplete = false;
+  if (mGLContext &&
+      !mForceReadback &&
+      IsGrallocDescriptor(mBackBuffer))
+  {
+    SurfaceDescriptorGralloc grallocDesc = mBackBuffer.get_SurfaceDescriptorGralloc();
 
-  if (aMaskLayer) {
-    static_cast<BasicImplData*>(aMaskLayer->ImplData())
-      ->Paint(aContext, nullptr);
+    GraphicBuffer* grallocBuffer = nullptr;
+    gfxIntSize size;
+
+    android::sp<GraphicBuffer> buffer = GrallocBufferActor::GetFrom(grallocDesc);
+
+    grallocBuffer = buffer.get();
+    size = gfxIntSize(buffer->getWidth(), buffer->getHeight());
+
+    if (grallocBuffer &&
+        mGLContext->CopyToGrallocBuffer(grallocBuffer, size, mTexture))
+    {
+      mBackBuffer = grallocDesc;
+      updateComplete = true;
+    }
   }
-  UpdateSurface(autoBackSurface.Get(), nullptr);
+
+  if (!updateComplete) {
+    AutoOpenSurface autoBackSurface(OPEN_READ_WRITE, mBackBuffer);
+    if (aMaskLayer) {
+      static_cast<BasicImplData*>(aMaskLayer->ImplData())
+        ->Paint(aContext, nullptr);
+    }
+    UpdateSurface(autoBackSurface.Get(), nullptr);
+    updateComplete = true;
+  }
   FireDidTransactionCallback();
 
   BasicManager()->PaintedCanvas(BasicManager()->Hold(this),

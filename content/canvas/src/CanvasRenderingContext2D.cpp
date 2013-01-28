@@ -821,7 +821,9 @@ CanvasRenderingContext2D::EnsureTarget()
      if (layerManager) {
 #ifdef USE_SKIA
        if (gfxPlatform::GetPlatform()->UseAcceleratedCanvas()) {
-         GetGLContext()->fGenTextures(1, &mTextureID);
+         //GetGLContext()->fGenTextures(1, &mTextureID);
+         GetGLContext()->ResizeOffscreen(gfxIntSize(size.width, size.height));
+         mTextureID = GetGLContext()->GetOffscreenTexture();
          MOZ_ASSERT(mTextureID);
          GetGLContext()->fBindTexture(LOCAL_GL_TEXTURE_2D, mTextureID);
          GetGLContext()->fTexImage2D(LOCAL_GL_TEXTURE_2D, 0, LOCAL_GL_RGBA, 

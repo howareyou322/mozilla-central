@@ -646,6 +646,15 @@ public:
         return sEGLLibrary.HasKHRLockSurface();
     }
 
+protected:
+    typedef android::GraphicBuffer GraphicBuffer;
+
+    EGLImage CreateImageFromGralloc(GraphicBuffer* buffer);
+    void CopyToImage(EGLImage image, const gfxIntSize& size, GLuint tex = 0);
+
+public:
+    virtual bool CopyToGrallocBuffer(GraphicBuffer* buffer, const gfxIntSize& size, GLuint tex = 0);
+
     virtual SharedTextureHandle CreateSharedHandle(SharedTextureShareType shareType);
     virtual SharedTextureHandle CreateSharedHandle(SharedTextureShareType shareType,
                                                    void* buffer,
@@ -724,6 +733,77 @@ protected:
         return surface;
     }
 };
+
+bool
+GLContextEGL::CopyToGrallocBuffer(GraphicBuffer* buffer, const gfxIntSize& size, GLuint tex)
+{
+    EGLImage image = CreateImageFromGralloc(buffer);
+    if (!image) {
+#ifdef MOZ_WIDGET_GONK
+        NS_WARNING("Copy to Gralloc buffer failed.");
+#endif
+        return false;
+    }
+
+    CopyToImage(image, size, tex);
+    fFinish();
+
+    MOZ_ALWAYS_TRUE(sEGLLibrary.fDestroyImage(EGL_DISPLAY(), image));
+    return true;
+}
+
+EGLImage
+GLContextEGL::CreateImageFromGralloc(GraphicBuffer* buffer)
+{
+    MOZ_ASSERT(buffer);
+
+#ifdef MOZ_WIDGET_GONK
+
+    const EGLint attr[] = {
+    //    LOCAL_EGL_IMAGE_PRESERVED, LOCAL_EGL_TRUE,
+        LOCAL_EGL_NONE, LOCAL_EGL_NONE
+    };
+    EGLContext context = EGL_NO_CONTEXT;
+    EGLClientBuffer clientBuffer = (EGLClientBuffer)(buffer->getNativeBuffer());
+
+    EGLImage image = sEGLLibrary.fCreateImage(EGL_DISPLAY(),
+                                              context,
+                                              EGL_NATIVE_BUFFER_ANDROID,
+                                              clientBuffer,
+                                              attr);
+
+    return image;
+#else
+    return EGL_NO_IMAGE;
+#endif
+}
+
+void
+GLContextEGL::CopyToImage(EGLImage image, const gfxIntSize& size, GLuint tex)
+{
+    MOZ_ASSERT(IsExtensionSupported(OES_EGL_image));
+    MOZ_ASSERT(image);
+
+    MakeCurrent();
+
+    GLuint boundTex = 0;
+    fGetIntegerv(LOCAL_GL_TEXTURE_BINDING_2D, (GLint*)&boundTex);
+    __android_log_print(ANDROID_LOG_INFO, "gfx", "GLContextEGL(%d) CopyToImage boundTex %d gentex %d\n", __LINE__, boundTex, tex);
+    //if (!tex) {
+      tex = 0;
+      fGenTextures(1, &tex);
+    //}
+    __android_log_print(ANDROID_LOG_INFO, "gfx", "GLContextEGL(%d) CopyToImage boundTex %d gentex %d\n", __LINE__, boundTex, tex);
+    fBindTexture(LOCAL_GL_TEXTURE_2D, tex);
+    fEGLImageTargetTexture2D(LOCAL_GL_TEXTURE_2D, image);
+
+    gfxIntSize srcSize = OffscreenActualSize();
+    BlitFramebufferToTexture(0, tex, srcSize, size);
+
+    fDeleteTextures(1, &tex);
+
+    fBindTexture(LOCAL_GL_TEXTURE_2D, boundTex);
+}
 
 typedef enum {
     Image
